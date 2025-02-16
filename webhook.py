@@ -6,38 +6,47 @@ app = Quart(__name__)
 FILE_PATH = 'messages.json'
 
 def init_message_file():
-    # Cria o arquivo JSON com uma lista vazia, se ele não existir.
+    # Cria o arquivo vazio se ele não existir.
     if not os.path.exists(FILE_PATH):
         with open(FILE_PATH, 'w') as f:
-            json.dump([], f)
+            f.write("")
+
+def get_next_id():
+    # Conta quantas mensagens já foram adicionadas pelo padrão "Id:".
+    if not os.path.exists(FILE_PATH):
+        return 1
+    count = 0
+    with open(FILE_PATH, 'r') as f:
+        for line in f:
+            if line.startswith("Id:"):
+                count += 1
+    return count + 1
 
 # Inicializa o arquivo antes de definir as rotas
 init_message_file()
 
 @app.route('/webhook', methods=['POST'])
 async def webhook():
-    # Obtém o JSON enviado na requisição
+    # Recebe o JSON enviado na requisição
     data = await request.get_json()
     print("SMS recebida:", data)
-
-    # Carrega as mensagens existentes
-    with open(FILE_PATH, 'r') as f:
-        messages = json.load(f)
-
-    # Define o novo id baseado no número de mensagens existentes
-    new_id = len(messages) + 1
-
-    # Obtém o conteúdo da mensagem, com valor padrão se não existir
-    message_text = data.get('message', 'Mensagem sem conteúdo')
-
-    # Adiciona a nova mensagem à lista
-    messages.append({"id": new_id, "message": message_text})
-
-    # Salva a lista atualizada no arquivo JSON com identação
-    with open(FILE_PATH, 'w') as f:
-        json.dump(messages, f, indent=4)
-
-    # Retorna resposta de sucesso
+    
+    # Determina o novo id contando mensagens já escritas
+    new_id = get_next_id()
+    
+    # Gera a string com o id e o JSON formatado
+    message_lines = []
+    message_lines.append(f"Id: {new_id}")
+    # Formata o JSON com indentação, garantindo a ordem e os campos fornecidos
+    formatted_message = json.dumps(data, indent=4, ensure_ascii=False)
+    message_lines.append(formatted_message)
+    message_lines.append(",\n")
+    mensagem_final = "\n".join(message_lines)
+    
+    # Acrescenta a nova mensagem no arquivo
+    with open(FILE_PATH, 'a') as f:
+        f.write(mensagem_final)
+    
     return jsonify({'status': 'success', 'message': 'SMS recebida com sucesso.'}), 200
 
 if __name__ == '__main__':
