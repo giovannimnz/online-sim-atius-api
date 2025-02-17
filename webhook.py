@@ -37,10 +37,10 @@ async def webhook():
     # Gera a string com o id e o JSON formatado
     message_lines = []
     message_lines.append(f"Id: {new_id}")
-    # Formata o JSON com indentação, garantindo a ordem e os campos fornecidos
     formatted_message = json.dumps(data, indent=4, ensure_ascii=False)
     message_lines.append(formatted_message)
-    message_lines.append(",\n")
+    # Adiciona o separador ";" ao final
+    message_lines.append(";")
     mensagem_final = "\n".join(message_lines)
     
     # Acrescenta a nova mensagem no arquivo
