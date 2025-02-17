@@ -25,10 +25,16 @@ def get_next_id():
 # Inicializa o arquivo antes de definir as rotas
 init_message_file()
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST', 'GET'])
 async def webhook():
-    # Recebe o JSON enviado na requisição
-    data = await request.get_json()
+    # Trata GET e POST de forma diferente
+    if request.method == 'GET':
+        # Recebe os parâmetros via query string e converte para dict
+        data = request.args.to_dict()
+    elif request.method == 'POST':
+        # Recebe o JSON enviado na requisição
+        data = await request.get_json()
+    
     print("SMS recebida:", data)
     
     # Determina o novo id contando mensagens já escritas
@@ -47,7 +53,7 @@ async def webhook():
     with open(FILE_PATH, 'a') as f:
         f.write(mensagem_final)
     
-    return jsonify({'status': 'success', 'message': 'SMS recebida com sucesso.'}), 200
+    return jsonify({'status': 'Success', 'message': 'SMS recebida com sucesso.'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050)
